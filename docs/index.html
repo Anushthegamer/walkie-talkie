@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pi Zero Walkie Talkie</title>
+    <style>
+        /* General Page Style */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        #btnTalk {
+            padding: 15px 30px;
+            font-size: 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s;
+        }
+
+        #btnTalk:active {
+            background-color: #45a049;
+            transform: scale(0.95);
+        }
+
+        #btnTalk:disabled {
+            background-color: #c0c0c0;
+            cursor: not-allowed;
+        }
+
+        #btnMute {
+            padding: 10px 20px;
+            font-size: 18px;
+            background-color: #ff5722;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            margin-top: 20px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s;
+        }
+
+        #btnMute:active {
+            background-color: #f44336;
+            transform: scale(0.95);
+        }
+
+        #btnMute:disabled {
+            background-color: #c0c0c0;
+            cursor: not-allowed;
+        }
+
+        .status {
+            margin-top: 20px;
+            font-size: 1.5rem;
+            color: #ff5722;
+        }
+
+        /* Styling for audio receiver */
+        audio {
+            margin-top: 30px;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .container {
+            text-align: center;
+            background-color: #fff;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Pi Zero Walkie Talkie</h1>
+        <button id="btnTalk">Hold to Talk</button>
+        <button id="btnMute">Mute</button>
+        <div class="status" id="status">Ready to Talk</div>
+        <audio id="audioReceiver" autoplay></audio>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/simple-peer@9.11.1/simplepeer.min.js"></script>
+    <script>
+        const buttonTalk = document.getElementById('btnTalk');
+        const buttonMute = document.getElementById('btnMute');
+        const status = document.getElementById('status');
+        const audioReceiver = document.getElementById('audioReceiver');
+        let localStream;
+        let peer;
+        let isMuted = false;
+
+        // Request access to microphone
+        navigator.mediaDevices.getUserMedia({ audio: true })
+            .then(stream => {
+                localStream = stream;
+                peer = new SimplePeer({ initiator: true, trickle: false, stream: localStream });
+
+                // Handle receiving audio stream
+                peer.on('stream', stream => {
+                    audioReceiver.srcObject = stream;
+                });
+
+                // WebRTC Error Handling
+                peer.on('error', (err) => {
+                    console.error('WebRTC Error: ', err);
+                    status.textContent = 'Error with connection';
+                });
+            })
+            .catch(error => {
+                console.log(error);
+                status.textContent = 'Microphone not available';
+            });
+
+        // Start talking when button is pressed
+        buttonTalk.addEventListener('mousedown', () => {
+            peer.signal('start-talk'); // Send signal to Pi Zero
+            status.textContent = 'Talking...';
+            buttonTalk.disabled = true; // Disable the button while talking
+        });
+
+        // Stop talking when button is released
+        buttonTalk.addEventListener('mouseup', () => {
+            peer.signal('stop-talk'); // Send stop signal to Pi Zero
+            status.textContent = 'Ready to Talk';
+            buttonTalk.disabled = false; // Enable the button after releasing
+        });
+
+        // Mute/unmute functionality
+        buttonMute.addEventListener('click', () => {
+            if (localStream) {
+                const audioTrack = localStream.getAudioTracks()[0];
+                audioTrack.enabled = !audioTrack.enabled; // Toggle mute
+                isMuted = !isMuted;
+                buttonMute.textContent = isMuted ? 'Unmute' : 'Mute';
+            }
+        });
+    </script>
+</body>
+</html>
