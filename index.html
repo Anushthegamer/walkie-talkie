@@ -5,26 +5,80 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pi Zero Walkie Talkie</title>
     <style>
+        /* General Page Style */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
         #btnTalk {
-            padding: 10px;
+            padding: 15px 30px;
             font-size: 20px;
             background-color: #4CAF50;
             color: white;
             border: none;
+            border-radius: 8px;
             cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s;
         }
+
         #btnTalk:active {
             background-color: #45a049;
+            transform: scale(0.95);
+        }
+
+        #btnTalk:disabled {
+            background-color: #c0c0c0;
+            cursor: not-allowed;
+        }
+
+        .status {
+            margin-top: 20px;
+            font-size: 1.5rem;
+            color: #ff5722;
+        }
+
+        /* Styling for audio receiver */
+        audio {
+            margin-top: 30px;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .container {
+            text-align: center;
+            background-color: #fff;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
     </style>
 </head>
 <body>
-    <h1>Pi Zero Walkie Talkie</h1>
-    <button id="btnTalk">Hold to Talk</button>
-    <audio id="audioReceiver" autoplay></audio>
+    <div class="container">
+        <h1>Pi Zero Walkie Talkie</h1>
+        <button id="btnTalk">Hold to Talk</button>
+        <div class="status" id="status">Ready to Talk</div>
+        <audio id="audioReceiver" autoplay></audio>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/simple-peer@9.11.1/simplepeer.min.js"></script>
     <script>
         const button = document.getElementById('btnTalk');
+        const status = document.getElementById('status');
         const audioReceiver = document.getElementById('audioReceiver');
         let localStream;
         let peer;
@@ -40,14 +94,21 @@
                     audioReceiver.srcObject = stream;
                 });
             })
-            .catch(error => console.log(error));
+            .catch(error => {
+                console.log(error);
+                status.textContent = 'Microphone not available';
+            });
 
         button.addEventListener('mousedown', () => {
             peer.signal('start-talk'); // Send signal to Pi Zero
+            status.textContent = 'Talking...';
+            button.disabled = true; // Disable the button while talking
         });
 
         button.addEventListener('mouseup', () => {
             peer.signal('stop-talk'); // Send stop signal to Pi Zero
+            status.textContent = 'Ready to Talk';
+            button.disabled = false; // Enable the button after releasing
         });
     </script>
 </body>
