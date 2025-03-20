@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pi Zero Walkie Talkie</title>
+    <style>
+        #btnTalk {
+            padding: 10px;
+            font-size: 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        #btnTalk:active {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <h1>Pi Zero Walkie Talkie</h1>
+    <button id="btnTalk">Hold to Talk</button>
+    <audio id="audioReceiver" autoplay></audio>
+    <script src="https://cdn.jsdelivr.net/npm/simple-peer@9.11.1/simplepeer.min.js"></script>
+    <script>
+        const button = document.getElementById('btnTalk');
+        const audioReceiver = document.getElementById('audioReceiver');
+        let localStream;
+        let peer;
+
+        // Request access to microphone
+        navigator.mediaDevices.getUserMedia({ audio: true })
+            .then(stream => {
+                localStream = stream;
+                peer = new SimplePeer({ initiator: true, trickle: false, stream: localStream });
+
+                // Handle receiving audio stream
+                peer.on('stream', stream => {
+                    audioReceiver.srcObject = stream;
+                });
+            })
+            .catch(error => console.log(error));
+
+        button.addEventListener('mousedown', () => {
+            peer.signal('start-talk'); // Send signal to Pi Zero
+        });
+
+        button.addEventListener('mouseup', () => {
+            peer.signal('stop-talk'); // Send stop signal to Pi Zero
+        });
+    </script>
+</body>
+</html>
